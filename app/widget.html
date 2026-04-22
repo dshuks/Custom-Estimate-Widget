@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V12</title>
+    <style>
+      :root {
+        --bg: #f4f1ea;
+        --surface: #fffdf9;
+        --panel: #efe6d8;
+        --line: #d1c2ab;
+        --text: #2f2a24;
+        --muted: #6e6558;
+        --accent: #0f766e;
+        --danger: #b42318;
+        --ok: #166534;
+      }
+      * { box-sizing: border-box; }
+      body { min-height: 100vh; margin: 0; font: 14px/1.45 "Segoe UI", Arial, sans-serif; color: var(--text); background: linear-gradient(160deg, #f8f4ee, var(--bg)); }
+      .shell { width: min(96vw, 1380px); max-width: 1380px; margin: 0 auto; padding: 28px; }
+      .hero, .card { background: rgba(255,253,249,.9); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 18px 50px rgba(47,42,36,.08); }
+      .hero { padding: 24px; margin-bottom: 18px; }
+      .hero-top { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+      .deal-badge { min-width: 260px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: rgba(239,230,216,.65); }
+      .deal-badge span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+      .deal-badge strong { display: block; margin-top: 6px; font-size: 20px; line-height: 1.2; }
+      h1, h2 { margin: 0 0 8px; font-family: Georgia, "Times New Roman", serif; }
+      p { margin: 0; color: var(--muted); }
+      .grid { display: grid; gap: 20px; grid-template-columns: 1.15fr .85fr; }
+      .card { padding: 18px; }
+      .meta { display: grid; gap: 10px; margin-top: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .meta strong, .status strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+      .toolbar { display: flex; gap: 10px; margin: 14px 0; flex-wrap: wrap; }
+      .toolbar.grow > * { flex: 1 1 180px; }
+      input, select, button { font: inherit; border-radius: 10px; border: 1px solid var(--line); padding: 10px 12px; }
+      input, select { background: #fff; color: var(--text); }
+      button { cursor: pointer; background: var(--accent); color: #fff; border: 0; }
+      button.secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
+      button:disabled { opacity: .65; cursor: wait; }
+      .sync-strip { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+      .sync-metrics { display: flex; gap: 18px; flex-wrap: wrap; }
+      .sync-metrics span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+      .sync-metrics strong { display: block; color: var(--text); font-size: 14px; letter-spacing: 0; text-transform: none; }
+      .status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
+      .status.error { color: var(--danger); border-color: rgba(180,35,24,.3); background: rgba(180,35,24,.08); }
+      .status.success { color: var(--ok); border-color: rgba(22,101,52,.25); background: rgba(22,101,52,.08); }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 12px 10px; border-bottom: 1px solid #eadfce; vertical-align: middle; text-align: left; }
+      th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+      .empty { padding: 20px 8px; color: var(--muted); text-align: center; }
+      .totals { margin-top: 16px; text-align: right; font-weight: 600; }
+      .hint { margin-top: 10px; font-size: 12px; color: var(--muted); }
+      .quote-id { font-size: 18px; font-weight: 700; }
+      .debug-card { margin-top: 18px; background: #241f1a; color: #f7f2e8; border-radius: 18px; border: 1px solid #4f4337; padding: 18px; }
+      .debug-card h2, .debug-card p { color: inherit; }
+      .debug-card pre { margin: 12px 0 0; padding: 14px; border-radius: 12px; background: #171310; color: #d7f9e9; overflow: auto; white-space: pre-wrap; word-break: break-word; max-height: 260px; }
+      @media (max-width: 980px) {
+        .grid, .meta { grid-template-columns: 1fr; }
+        .shell { padding: 16px; }
+        table, thead, tbody, tr, td, th { display: block; }
+        thead { display: none; }
+        tr { padding: 10px 0; border-bottom: 1px solid #eadfce; }
+        td { border: 0; padding: 8px 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <section class="hero">
+        <div class="hero-top">
+          <div class="deal-badge">
+            <span>Active Deal</span>
+            <strong id="heroDealName">Loading deal...</strong>
+          </div>
+        </div>
+        <div id="status" class="status" hidden></div>
+      </section>
+      <div class="grid">
+        <section class="card" style="grid-column: 1 / -1;">
+          <h2>CRM Products</h2>
+          <div class="sync-strip">
+            <div class="sync-metrics">
+              <span>Source<strong>Zoho CRM Products</strong></span>
+              <span>Synced<strong id="productCount">0 Products</strong></span>
+              <span>Last Sync<strong id="productSyncTime">Not synced yet</strong></span>
+            </div>
+            <button id="syncProductsBtn" type="button" class="secondary">Sync Products</button>
+          </div>
+          <div class="toolbar grow">
+            <input id="productSearch" type="search" placeholder="Search Products by name or code">
+            <select id="productSelect" aria-label="Products list"></select>
+            <button id="addProductBtn" type="button">Add Product</button>
+          </div>
+          <p class="hint">Products are pulled from the Zoho CRM `Products` module and stay selectable here after each sync.</p>
+        </section>
+      </div>
+      <section class="card" style="margin-top:18px;">
+        <h2>Quote Line Items</h2>
+        <div style="overflow:auto;">
+          <table>
+            <thead>
+              <tr><th>Product</th><th>Code</th><th>Quantity</th><th>Rate</th><th>Total</th><th></th></tr>
+            </thead>
+            <tbody id="lineItemsBody"></tbody>
+          </table>
+        </div>
+        <div class="totals">Quote total: <span id="quoteTotal">$0.00</span></div>
+        <div class="toolbar" style="justify-content:flex-end; margin-top:18px;">
+          <button id="refreshBtn" type="button" class="secondary">Reload Context</button>
+          <button id="submitBtn" type="button">Create Quote</button>
+        </div>
+      </section>
+      <section class="debug-card">
+        <h2>Create Quote Debug</h2>
+        <p>Use this panel to inspect the payload sent to Zoho CRM and the raw response returned after you click Create Quote.</p>
+        <pre id="debugOutput">Waiting for Create Quote...</pre>
+      </section>
+    </div>
+    <script src="https://live.zwidgets.com/js-sdk/1.2/ZohoEmbededAppSDK.min.js"></script>
+    <script src="./js/domain.js"></script>
+    <script src="./js/widget.js"></script>
+  </body>
+</html>
