@@ -109,17 +109,19 @@
     var debugOutputEl = doc.getElementById("debugOutput");
     var heroDealNameEl = doc.getElementById("heroDealName");
     var dealMetaEl = doc.getElementById("dealMeta");
-    var productSearchEl = doc.getElementById("productSearch");
-    var productSelectEl = doc.getElementById("productSelect");
-    var addProductBtn = doc.getElementById("addProductBtn");
     var syncProductsBtn = doc.getElementById("syncProductsBtn");
     var productCountEl = doc.getElementById("productCount");
     var productSyncTimeEl = doc.getElementById("productSyncTime");
     var lineItemsBody = doc.getElementById("lineItemsBody");
+    var pickerPopoutEl = doc.getElementById("pickerPopout");
+    var pickerSearchInputEl = doc.getElementById("pickerSearchInput");
+    var pickerResultsEl = doc.getElementById("pickerResults");
+    var closePickerBtn = doc.getElementById("closePickerBtn");
     var quoteTotalEl = doc.getElementById("quoteTotal");
     var submitBtn = doc.getElementById("submitBtn");
     var refreshBtn = doc.getElementById("refreshBtn");
-    var state = { dealId: "", deal: null, products: [], lineItems: [], lastProductSyncAt: null, status: domain.createState() };
+    var addLineItemBtn = doc.getElementById("addLineItemBtn");
+    var state = { dealId: "", deal: null, products: [], lineItems: [], activePickerIndex: null, lastProductSyncAt: null, status: domain.createState() };
     var client = win.ZOHO ? createZohoClient(win.ZOHO, domain.FIELDS) : null;
 
     function setStatus(next) {
@@ -153,13 +155,15 @@
     }
 
     function renderProducts() {
-      var term = (productSearchEl.value || "").toLowerCase();
-      var filtered = state.products.filter(function (product) {
-        return !term || [product.Product_Name, product.Product_Code].join(" ").toLowerCase().indexOf(term) >= 0;
+      return state.products;
+    }
+
+    function getPickerResults(index) {
+      var lineItem = state.lineItems[index] || {};
+      var term = (lineItem.pickerSearch || "").toLowerCase();
+      return state.products.filter(function (product) {
+        return !term || [product.Product_Name, product.Product_Code, product.Description, product.Product_Description].join(" ").toLowerCase().indexOf(term) >= 0;
       });
-      productSelectEl.innerHTML = filtered.map(function (product) {
-        return "<option value='" + product.id + "'>" + product.Product_Name + (product.Product_Code ? " (" + product.Product_Code + ")" : "") + "</option>";
-      }).join("") || "<option value=''>" + (state.products.length ? "No matching Products" : "No Products synced from Zoho CRM") + "</option>";
     }
 
     function renderProductSync() {
@@ -178,27 +182,82 @@
     }
 
     function renderLines() {
-      if (!state.lineItems.length) lineItemsBody.innerHTML = "<tr><td colspan='6' class='empty'>No Products selected yet.</td></tr>";
+      if (!state.lineItems.length) lineItemsBody.innerHTML = "<tr><td colspan='5' class='empty'>No line items yet. Click Add Line Item to start building the quote.</td></tr>";
       else lineItemsBody.innerHTML = state.lineItems.map(function (item, index) {
         return "<tr>" +
-          "<td>" + item.name + "</td>" +
-          "<td>" + (item.code || "-") + "</td>" +
-          "<td><input data-index='" + index + "' data-field='quantity' type='number' min='1' step='1' value='" + item.quantity + "'></td>" +
-          "<td><input data-index='" + index + "' data-field='rate' type='number' min='0' step='0.01' value='" + item.rate + "'></td>" +
-          "<td data-row-total='" + index + "'>$" + domain.helpers.money(lineTotal(item)) + "</td>" +
-          "<td><button type='button' class='secondary' data-index='" + index + "' data-remove='1'>Remove</button></td>" +
+          "<td class='item-cell'><div class='item-picker'>" +
+            "<button type='button' class='item-select-btn" + (!item.id ? " placeholder" : "") + "' data-open-picker='" + index + "'>" +
+              (item.id ? ("<strong>" + item.name + "</strong><div class='item-description'>" + (item.description || item.code || "No description") + "</div>") : "Select item") +
+            "</button>" +
+            "<div class='item-picker-menu' hidden></div>" +
+          "</div></td>" +
+          "<td class='numeric-cell'><div class='numeric-wrap'><input class='numeric-input' data-index='" + index + "' data-field='quantity' type='number' min='1' step='1' value='" + item.quantity + "'></div></td>" +
+          "<td class='numeric-cell'><div class='numeric-wrap'><input class='numeric-input' data-index='" + index + "' data-field='rate' type='number' min='0' step='0.01' value='" + item.rate + "'></div></td>" +
+          "<td class='money-cell' data-row-total='" + index + "'><div class='money-wrap'>$" + domain.helpers.money(lineTotal(item)) + "</div></td>" +
+          "<td class='remove-cell'><div class='remove-wrap'><button type='button' class='remove-btn' aria-label='Remove line item' title='Remove' data-index='" + index + "' data-remove='1'>&times;</button></div></td>" +
         "</tr>";
       }).join("");
       renderQuoteTotal();
     }
 
-    function addSelectedProduct() {
-      var selectedId = productSelectEl.value;
+    function rerenderLinesKeepingPickerFocus(index, cursorPosition) {
+      renderLines();
+      renderPickerPopout();
+      win.requestAnimationFrame(function () {
+        if (state.activePickerIndex !== index) return;
+        pickerSearchInputEl.focus();
+        if (typeof cursorPosition === "number" && typeof pickerSearchInputEl.setSelectionRange === "function") {
+          pickerSearchInputEl.setSelectionRange(cursorPosition, cursorPosition);
+        }
+      });
+    }
+
+    function renderPickerPopout() {
+      if (state.activePickerIndex === null || state.activePickerIndex === undefined) {
+        pickerPopoutEl.hidden = true;
+        pickerResultsEl.innerHTML = "";
+        pickerSearchInputEl.value = "";
+        return;
+      }
+
+      var index = state.activePickerIndex;
+      var lineItem = state.lineItems[index] || {};
+      var filtered = getPickerResults(index);
+      pickerPopoutEl.hidden = false;
+      pickerSearchInputEl.value = lineItem.pickerSearch || "";
+      pickerResultsEl.innerHTML = filtered.length ? filtered.map(function (product) {
+        return "<button type='button' class='item-picker-option' data-pick-product='" + index + "' data-product-id='" + product.id + "'>" +
+          "<div><strong>" + product.Product_Name + "</strong><span>" + (product.Description || product.Product_Description || product.Product_Code || "No description") + "</span></div>" +
+          "<div class='item-picker-meta'>" + (product.Product_Code ? "Code: " + product.Product_Code + "<br>" : "") + "Rate: $" + domain.helpers.money(product.Unit_Price || 0) + "</div>" +
+        "</button>";
+      }).join("") : "<div class='item-picker-empty'>" + (state.products.length ? "No matching Products" : "No Products synced from Zoho CRM") + "</div>";
+    }
+
+    function closePickerPopout() {
+      state.activePickerIndex = null;
+      renderPickerPopout();
+    }
+
+    function addEmptyLineItem() {
+      state.lineItems.push({ id: "", name: "", code: "", description: "", quantity: 1, rate: 0, pickerSearch: "" });
+      state.activePickerIndex = null;
+      renderLines();
+      renderPickerPopout();
+    }
+
+    function addProductById(selectedId, index) {
       var product = state.products.find(function (entry) { return entry.id === selectedId; });
       if (!product) return;
-      var existing = state.lineItems.find(function (entry) { return entry.id === selectedId; });
-      if (existing) existing.quantity = Number(existing.quantity) + 1;
-      else state.lineItems.push({ id: product.id, name: product.Product_Name, code: product.Product_Code || "", quantity: 1, rate: Number(product.Unit_Price || 0) });
+      state.lineItems[index] = {
+        id: product.id,
+        name: product.Product_Name,
+        code: product.Product_Code || "",
+        description: product.Description || product.Product_Description || "",
+        quantity: state.lineItems[index].quantity || 1,
+        rate: Number(product.Unit_Price || 0),
+        pickerSearch: ""
+      };
+      closePickerPopout();
       renderLines();
     }
 
@@ -244,6 +303,7 @@
         renderProducts();
         renderProductSync();
         renderLines();
+        renderPickerPopout();
         setStatus({ type: "reset" });
       } catch (error) {
         debugLog("Hydration failed:", error);
@@ -257,23 +317,57 @@
       return;
     }
 
-    productSearchEl.addEventListener("input", renderProducts);
-    addProductBtn.addEventListener("click", addSelectedProduct);
     syncProductsBtn.addEventListener("click", function () { syncProducts({ silent: false }); });
     refreshBtn.addEventListener("click", function () { hydrate({ EntityId: state.dealId }); });
+    addLineItemBtn.addEventListener("click", addEmptyLineItem);
     lineItemsBody.addEventListener("input", function (event) {
       var index = Number(event.target.getAttribute("data-index"));
       var field = event.target.getAttribute("data-field");
-      if (!Number.isInteger(index) || !field) return;
-      state.lineItems[index][field] = event.target.value;
-      updateRowTotal(index);
+      if (Number.isInteger(index) && field) {
+        state.lineItems[index][field] = event.target.value;
+        updateRowTotal(index);
+        return;
+      }
+      var pickerIndex = Number(event.target.getAttribute("data-picker-search"));
+    });
+    pickerSearchInputEl.addEventListener("input", function (event) {
+      if (state.activePickerIndex === null || state.activePickerIndex === undefined) return;
+      state.lineItems[state.activePickerIndex].pickerSearch = event.target.value;
+      rerenderLinesKeepingPickerFocus(state.activePickerIndex, event.target.selectionStart);
     });
     lineItemsBody.addEventListener("click", function (event) {
+      var pickerTrigger = event.target.closest("[data-open-picker]");
+      if (pickerTrigger) {
+        state.activePickerIndex = Number(pickerTrigger.getAttribute("data-open-picker"));
+        renderLines();
+        renderPickerPopout();
+        win.requestAnimationFrame(function () { pickerSearchInputEl.focus(); });
+        return;
+      }
       var index = Number(event.target.getAttribute("data-index"));
       if (event.target.getAttribute("data-remove")) {
         state.lineItems.splice(index, 1);
+        closePickerPopout();
         renderLines();
       }
+    });
+    pickerResultsEl.addEventListener("click", function (event) {
+      var pickProductTrigger = event.target.closest("[data-pick-product]");
+      if (!pickProductTrigger) return;
+      addProductById(
+        pickProductTrigger.getAttribute("data-product-id"),
+        Number(pickProductTrigger.getAttribute("data-pick-product"))
+      );
+    });
+    closePickerBtn.addEventListener("click", closePickerPopout);
+    pickerPopoutEl.addEventListener("click", function (event) {
+      if (event.target !== pickerPopoutEl) return;
+      closePickerPopout();
+    });
+    doc.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape") return;
+      if (state.activePickerIndex === null || state.activePickerIndex === undefined) return;
+      closePickerPopout();
     });
     submitBtn.addEventListener("click", async function () {
       submitBtn.disabled = true;
@@ -305,7 +399,7 @@
     debugLog("Widget booted successfully. Initializing Zoho embedded app.");
     client.init().then(function () {
       debugLog("Zoho embedded app initialized successfully.");
-      return client.resize({ width: "92vw", height: "88vh" }).catch(function (error) {
+      return client.resize({ width: "100vw", height: "100vh" }).catch(function (error) {
         debugLog("Resize call failed or is unsupported:", error);
         return null;
       });

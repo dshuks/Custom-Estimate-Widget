@@ -3,65 +3,268 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V12</title>
+    <title>V24</title>
     <style>
       :root {
-        --bg: #f4f1ea;
-        --surface: #fffdf9;
-        --panel: #efe6d8;
-        --line: #d1c2ab;
-        --text: #2f2a24;
-        --muted: #6e6558;
-        --accent: #0f766e;
+        --bg: #f3efe7;
+        --surface: #fffdfa;
+        --surface-strong: #ffffff;
+        --panel: #ede4d5;
+        --panel-strong: #e2d4bc;
+        --line: #d3c4ad;
+        --line-soft: #ece2d4;
+        --text: #2d241b;
+        --muted: #706252;
+        --accent: #0f7b6d;
+        --accent-deep: #0b5d53;
         --danger: #b42318;
         --ok: #166534;
+        --shadow: 0 18px 48px rgba(45, 36, 27, 0.08);
+        --shadow-soft: 0 10px 28px rgba(45, 36, 27, 0.05);
       }
       * { box-sizing: border-box; }
-      body { min-height: 100vh; margin: 0; font: 14px/1.45 "Segoe UI", Arial, sans-serif; color: var(--text); background: linear-gradient(160deg, #f8f4ee, var(--bg)); }
-      .shell { width: min(96vw, 1380px); max-width: 1380px; margin: 0 auto; padding: 28px; }
-      .hero, .card { background: rgba(255,253,249,.9); border: 1px solid var(--line); border-radius: 18px; box-shadow: 0 18px 50px rgba(47,42,36,.08); }
-      .hero { padding: 24px; margin-bottom: 18px; }
+      [hidden] { display: none !important; }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        font: 14px/1.45 "Segoe UI", Arial, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(15,123,109,.08), transparent 28%),
+          radial-gradient(circle at top right, rgba(194,160,106,.1), transparent 22%),
+          linear-gradient(180deg, #f9f5ef, var(--bg));
+      }
+      .shell { width: 100vw; max-width: none; min-height: 100vh; margin: 0; padding: 12px 14px 18px; }
+      .hero, .card { background: rgba(255,253,249,.96); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+      .hero { padding: 24px; margin-bottom: 18px; overflow: hidden; position: relative; }
+      .hero::after {
+        content: "";
+        position: absolute;
+        right: -40px;
+        bottom: -70px;
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(15,123,109,.13), transparent 68%);
+        pointer-events: none;
+      }
       .hero-top { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
-      .deal-badge { min-width: 260px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: rgba(239,230,216,.65); }
+      .hero-title span {
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(15,123,109,.1);
+        color: var(--accent-deep);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+      }
+      .deal-badge {
+        min-width: 320px;
+        padding: 16px 18px;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, rgba(255,255,255,.82), rgba(237,228,213,.9));
+        box-shadow: var(--shadow-soft);
+        position: relative;
+        z-index: 1;
+      }
       .deal-badge span { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-      .deal-badge strong { display: block; margin-top: 6px; font-size: 20px; line-height: 1.2; }
+      .deal-badge strong { display: block; margin-top: 8px; font-size: 24px; line-height: 1.15; }
       h1, h2 { margin: 0 0 8px; font-family: Georgia, "Times New Roman", serif; }
+      h1 { font-size: 34px; }
+      h2 { font-size: 22px; }
       p { margin: 0; color: var(--muted); }
       .grid { display: grid; gap: 20px; grid-template-columns: 1.15fr .85fr; }
-      .card { padding: 18px; }
+      .card { padding: 20px; background: linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,251,245,.92)); }
       .meta { display: grid; gap: 10px; margin-top: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .meta strong, .status strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
       .toolbar { display: flex; gap: 10px; margin: 14px 0; flex-wrap: wrap; }
-      .toolbar.grow > * { flex: 1 1 180px; }
-      input, select, button { font: inherit; border-radius: 10px; border: 1px solid var(--line); padding: 10px 12px; }
-      input, select { background: #fff; color: var(--text); }
-      button { cursor: pointer; background: var(--accent); color: #fff; border: 0; }
-      button.secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
+      input, select, button {
+        font: inherit;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease, background .18s ease;
+      }
+      input, select { background: var(--surface-strong); color: var(--text); box-shadow: inset 0 1px 0 rgba(255,255,255,.85); }
+      input:focus, select:focus { outline: none; border-color: rgba(15,123,109,.5); box-shadow: 0 0 0 4px rgba(15,123,109,.12); }
+      button { cursor: pointer; background: linear-gradient(180deg, var(--accent), var(--accent-deep)); color: #fff; border: 0; box-shadow: 0 10px 24px rgba(15,123,109,.2); font-weight: 600; }
+      button:hover { transform: translateY(-1px); }
+      button.secondary { background: linear-gradient(180deg, #fff, #f8f1e7); color: var(--text); border: 1px solid var(--line); box-shadow: none; }
       button:disabled { opacity: .65; cursor: wait; }
-      .sync-strip { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); }
+      .sync-strip {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: linear-gradient(180deg, var(--panel), var(--panel-strong));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.4);
+      }
       .sync-metrics { display: flex; gap: 18px; flex-wrap: wrap; }
       .sync-metrics span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
       .sync-metrics strong { display: block; color: var(--text); font-size: 14px; letter-spacing: 0; text-transform: none; }
-      .status { margin-top: 14px; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
+      .status { margin-top: 16px; padding: 13px 15px; border-radius: 14px; border: 1px solid var(--line); background: var(--panel); position: relative; z-index: 1; }
       .status.error { color: var(--danger); border-color: rgba(180,35,24,.3); background: rgba(180,35,24,.08); }
       .status.success { color: var(--ok); border-color: rgba(22,101,52,.25); background: rgba(22,101,52,.08); }
-      table { width: 100%; border-collapse: collapse; }
-      th, td { padding: 12px 10px; border-bottom: 1px solid #eadfce; vertical-align: middle; text-align: left; }
-      th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
-      .empty { padding: 20px 8px; color: var(--muted); text-align: center; }
-      .totals { margin-top: 16px; text-align: right; font-weight: 600; }
+      table { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+      thead th {
+        padding: 13px 12px;
+        background: #f4ede1;
+        border-top: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: .08em;
+      }
+      thead th:first-child { border-left: 1px solid var(--line); border-top-left-radius: 14px; }
+      thead th:last-child { border-right: 1px solid var(--line); border-top-right-radius: 14px; }
+      tbody td {
+        padding: 12px;
+        border-bottom: 1px solid var(--line-soft);
+        background: rgba(255,255,255,.78);
+        vertical-align: middle;
+        text-align: left;
+      }
+      tbody tr td:first-child { border-left: 1px solid var(--line-soft); }
+      tbody tr td:last-child { border-right: 1px solid var(--line-soft); }
+      tbody tr:last-child td:first-child { border-bottom-left-radius: 14px; }
+      tbody tr:last-child td:last-child { border-bottom-right-radius: 14px; }
+      .subform-col-item { width: 52%; }
+      .subform-col-qty, .subform-col-rate, .subform-col-total { width: 14%; }
+      .subform-col-remove { width: 6%; text-align: center; }
+      .empty { padding: 24px 10px; color: var(--muted); text-align: center; }
+      .totals { margin-top: 18px; text-align: right; font-weight: 700; font-size: 18px; }
       .hint { margin-top: 10px; font-size: 12px; color: var(--muted); }
       .quote-id { font-size: 18px; font-weight: 700; }
-      .debug-card { margin-top: 18px; background: #241f1a; color: #f7f2e8; border-radius: 18px; border: 1px solid #4f4337; padding: 18px; }
+      .debug-card { margin-top: 18px; background: linear-gradient(180deg, #231d18, #17120f); color: #f7f2e8; border-radius: 18px; border: 1px solid #4f4337; padding: 18px; box-shadow: var(--shadow); }
       .debug-card h2, .debug-card p { color: inherit; }
-      .debug-card pre { margin: 12px 0 0; padding: 14px; border-radius: 12px; background: #171310; color: #d7f9e9; overflow: auto; white-space: pre-wrap; word-break: break-word; max-height: 260px; }
+      .debug-card pre { margin: 12px 0 0; padding: 14px; border-radius: 14px; background: #120f0d; color: #d7f9e9; overflow: auto; white-space: pre-wrap; word-break: break-word; max-height: 260px; border: 1px solid #3b3129; }
+      .item-cell { width: 100%; }
+      .item-cell strong { display: block; font-size: 14px; color: var(--text); }
+      .item-description { margin-top: 4px; font-size: 12px; color: var(--muted); }
+      .numeric-cell, .money-cell, .remove-cell { vertical-align: top; }
+      .numeric-wrap, .money-wrap, .remove-wrap {
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .numeric-wrap { padding-top: 2px; }
+      .numeric-input {
+        width: 100%;
+        min-width: 0;
+        max-width: 104px;
+        text-align: right;
+      }
+      .money-cell { font-weight: 700; white-space: nowrap; }
+      .money-wrap { font-size: 15px; }
+      .remove-wrap { justify-content: center; }
+      .item-picker { position: relative; width: 100%; min-width: 0; }
+      .item-select-btn {
+        width: 100%;
+        display: block;
+        padding: 12px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: linear-gradient(180deg, #fff, #faf4eb);
+        color: var(--text);
+        box-shadow: none;
+        text-align: left;
+      }
+      .item-select-btn:hover { transform: none; background: rgba(15,123,109,.06); }
+      .item-select-btn.placeholder { color: var(--muted); }
+      .item-picker-menu[hidden] { display: none; }
+      .picker-popout {
+        position: fixed;
+        inset: 0;
+        z-index: 40;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 56px 24px 24px;
+        background: rgba(31, 24, 18, 0.28);
+        backdrop-filter: blur(4px);
+      }
+      .picker-popout-panel {
+        width: min(920px, 96vw);
+        max-height: calc(100vh - 80px);
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: #fffdfa;
+        box-shadow: 0 28px 64px rgba(45, 36, 27, 0.2);
+        overflow: hidden;
+      }
+      .picker-popout-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--line-soft);
+        background: linear-gradient(180deg, #fff, #f8f0e5);
+      }
+      .picker-popout-header strong { display: block; font-size: 16px; }
+      .picker-popout-header span { display: block; margin-top: 3px; font-size: 12px; color: var(--muted); }
+      .picker-close-btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #fff, #f7f1e8);
+        color: var(--text);
+        border: 1px solid var(--line);
+        box-shadow: none;
+        font-size: 18px;
+      }
+      .item-picker-search { padding: 12px; border-bottom: 1px solid var(--line-soft); background: #fcf7f0; }
+      .item-picker-search input { width: 100%; }
+      .item-picker-results { max-height: calc(100vh - 220px); overflow: auto; }
+      .item-picker-option {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: flex-start;
+        padding: 12px 14px;
+        border: 0;
+        border-bottom: 1px solid var(--line-soft);
+        background: transparent;
+        color: var(--text);
+        box-shadow: none;
+        text-align: left;
+      }
+      .item-picker-option:hover { transform: none; background: rgba(15,123,109,.06); }
+      .item-picker-option:last-child { border-bottom: 0; }
+      .item-picker-option strong { display: block; font-size: 14px; }
+      .item-picker-option span { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+      .item-picker-meta { white-space: nowrap; text-align: right; font-size: 12px; color: var(--muted); }
+      .item-picker-empty { padding: 16px 14px; color: var(--muted); text-align: center; }
+      .remove-btn {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #fff, #f7f1e8);
+        color: var(--danger);
+        border: 1px solid rgba(180,35,24,.2);
+        box-shadow: none;
+        font-size: 18px;
+        line-height: 1;
+      }
+      .remove-btn:hover { background: rgba(180,35,24,.08); }
+      .line-items-wrap { overflow-x: auto; }
       @media (max-width: 980px) {
         .grid, .meta { grid-template-columns: 1fr; }
         .shell { padding: 16px; }
-        table, thead, tbody, tr, td, th { display: block; }
-        thead { display: none; }
-        tr { padding: 10px 0; border-bottom: 1px solid #eadfce; }
-        td { border: 0; padding: 8px 0; }
+        .picker-popout { padding: 14px; }
+        .picker-popout-panel { width: 100%; max-height: calc(100vh - 28px); }
       }
     </style>
   </head>
@@ -69,6 +272,10 @@
     <div class="shell">
       <section class="hero">
         <div class="hero-top">
+          <div class="hero-title">
+            <span>Zoho CRM Quote Builder</span>
+            <h1>V24</h1>
+          </div>
           <div class="deal-badge">
             <span>Active Deal</span>
             <strong id="heroDealName">Loading deal...</strong>
@@ -87,20 +294,25 @@
             </div>
             <button id="syncProductsBtn" type="button" class="secondary">Sync Products</button>
           </div>
-          <div class="toolbar grow">
-            <input id="productSearch" type="search" placeholder="Search Products by name or code">
-            <select id="productSelect" aria-label="Products list"></select>
-            <button id="addProductBtn" type="button">Add Product</button>
-          </div>
-          <p class="hint">Products are pulled from the Zoho CRM `Products` module and stay selectable here after each sync.</p>
+          <p class="hint">Products are pulled from the Zoho CRM `Products` module. Add a line below and select/search products directly inside each row.</p>
         </section>
       </div>
       <section class="card" style="margin-top:18px;">
         <h2>Quote Line Items</h2>
-        <div style="overflow:auto;">
+        <div class="toolbar" style="justify-content:space-between; align-items:center;">
+          <p class="hint" style="margin:0;">Each line stays horizontal: item, quantity, rate, total, and remove.</p>
+          <button id="addLineItemBtn" type="button" class="secondary">Add Line Item</button>
+        </div>
+        <div class="line-items-wrap">
           <table>
             <thead>
-              <tr><th>Product</th><th>Code</th><th>Quantity</th><th>Rate</th><th>Total</th><th></th></tr>
+              <tr>
+                <th class="subform-col-item">Item</th>
+                <th class="subform-col-qty">Quantity</th>
+                <th class="subform-col-rate">Rate</th>
+                <th class="subform-col-total">Total</th>
+                <th class="subform-col-remove"></th>
+              </tr>
             </thead>
             <tbody id="lineItemsBody"></tbody>
           </table>
@@ -116,6 +328,21 @@
         <p>Use this panel to inspect the payload sent to Zoho CRM and the raw response returned after you click Create Quote.</p>
         <pre id="debugOutput">Waiting for Create Quote...</pre>
       </section>
+    </div>
+    <div id="pickerPopout" class="picker-popout" hidden>
+      <div class="picker-popout-panel">
+        <div class="picker-popout-header">
+          <div>
+            <strong>Select Product</strong>
+            <span>Search Zoho CRM Products and choose one for the active line item.</span>
+          </div>
+          <button id="closePickerBtn" type="button" class="picker-close-btn" aria-label="Close product picker">&times;</button>
+        </div>
+        <div class="item-picker-search">
+          <input id="pickerSearchInput" type="search" placeholder="Search products by name, code, or description">
+        </div>
+        <div id="pickerResults" class="item-picker-results"></div>
+      </div>
     </div>
     <script src="https://live.zwidgets.com/js-sdk/1.2/ZohoEmbededAppSDK.min.js"></script>
     <script src="./js/domain.js"></script>
